@@ -5,6 +5,7 @@ package com.mercantix.app.entities;
 public class LoginRequest {
 	private String username;
     private String password;
+    
     public LoginRequest() {
 		// TODO Auto-generated constructor stub
 	}

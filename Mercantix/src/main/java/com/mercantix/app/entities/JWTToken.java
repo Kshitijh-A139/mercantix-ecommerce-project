@@ -1,80 +1,88 @@
 package com.mercantix.app.entities;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-import org.hibernate.annotations.ManyToAny;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "jwt_tokens")
 public class JWTToken {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Specifies that the tokenId will be auto-generated.
-    private Integer tokenId; // Stores the unique identifier for each token.
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "token_id")
+    private Integer tokenId;
 
-    @ManyToAny // Establishes a Many-to-one relationship with the User entity.
-    @JoinColumn(name = "user_id", nullable = false) // Links the token to a specific user in the Users table.
-    private User user; // Represents the user associated with the token.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(nullable = false) // Ensures that the token cannot be null.
-    private String token; // Stores the JWT token string.
+    @Column(nullable = false, length = 500)
+    private String token;
 
-    @Column(nullable = false) // Ensures that the expiration time cannot be null.
-    private LocalDateTime expiresAt; // Stores the expiration time of the token.
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-	public JWTToken(Integer tokenId, User user, String token, LocalDateTime expiresAt) {
-		super();
-		this.tokenId = tokenId;
-		this.user = user;
-		this.token = token;
-		this.expiresAt = expiresAt;
-	}
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 
-	public JWTToken(User user, String token, LocalDateTime expiresAt) {
-		super();
-		this.user = user;
-		this.token = token;
-		this.expiresAt = expiresAt;
-	}
+    // JPA constructor
+    protected JWTToken() {}
 
-	public Integer getTokenId() {
-		return tokenId;
-	}
+    public JWTToken(User user, String token, LocalDateTime expiresAt) {
+        this.user = user;
+        this.token = token;
+        this.expiresAt = expiresAt;
+    }
 
-	public void setTokenId(Integer tokenId) {
-		this.tokenId = tokenId;
-	}
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
-	public User getUser() {
-		return user;
-	}
+    // Getters only (no setters for immutability)
 
-	public void setUser(User user) {
-		this.user = user;
-	}
+    public Integer getTokenId() {
+        return tokenId;
+    }
 
-	public String getToken() {
-		return token;
-	}
+    public User getUser() {
+        return user;
+    }
 
-	public void setToken(String token) {
-		this.token = token;
-	}
+    public String getToken() {
+        return token;
+    }
 
-	public LocalDateTime getExpiresAt() {
-		return expiresAt;
-	}
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
-	public void setExpiresAt(LocalDateTime expiresAt) {
-		this.expiresAt = expiresAt;
-	}
-	
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    // equals & hashCode based on ID
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JWTToken that = (JWTToken) o;
+        return tokenId != null && tokenId.equals(that.tokenId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tokenId);
+    }
+
+    @Override
+    public String toString() {
+        return "JWTToken{" +
+                "tokenId=" + tokenId +
+                ", expiresAt=" + expiresAt +
+                '}';
+    }
 }
-//Getters and setters

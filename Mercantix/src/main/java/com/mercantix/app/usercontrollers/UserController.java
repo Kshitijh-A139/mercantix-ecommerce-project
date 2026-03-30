@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mercantix.app.entities.LoginRequest;
 import com.mercantix.app.entities.User;
 import com.mercantix.app.entities.UserDAO;
 import com.mercantix.app.responses.RegisterResponse;
@@ -32,4 +33,10 @@ public class UserController {
         		new RegisterResponse("User registered successfully", registeredUser)
         );
     }
+    
+    @PostMapping("/login")
+    public User login(@RequestBody LoginRequest request) {
+        return userService.login(request.getUsername(), request.getPassword());
+    }
+
 }

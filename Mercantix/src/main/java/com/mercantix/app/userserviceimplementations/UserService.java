@@ -1,8 +1,11 @@
 package com.mercantix.app.userserviceimplementations;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.mercantix.app.entities.User;
 import com.mercantix.app.userrepositories.UserRepository;
 import com.mercantix.app.userservices.UserServiceContract;
@@ -10,32 +13,47 @@ import com.mercantix.app.userservices.UserServiceContract;
 @Service
 public class UserService implements UserServiceContract {
 
-	
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-	    private final UserRepository userRepository;
-	    private final BCryptPasswordEncoder passwordEncoder;
+    // ✅ Constructor injection
+    public UserService(UserRepository userRepository,
+                       BCryptPasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-	    public UserService(UserRepository userRepository) {
-	        this.userRepository = userRepository;
-	        this.passwordEncoder = new BCryptPasswordEncoder();
-	    }
+    // ✅ REGISTER USER
+    @Override
+    public User registerUser(User user) {
 
-	    public User registerUser(User user) {
-	        // Check if username or email already exists
-	        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-	            throw new RuntimeException("Username is already taken");
-	        }
+        // Check duplicate username
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Username is already taken"
+            );
+        }
 
-	        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-	            throw new RuntimeException("Email is already registered");
-	        }
+        try {
+            // ✅ CRITICAL FIX → hash password
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-	        // Encode password before saving
-	        user.setPassword(passwordEncoder.encode(user.getPassword()));
+            return userRepository.save(user);
 
-	        // Save the user
-	        return userRepository.save(user);
-	    }
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Username is already taken"
+            );
+        }
+    }
+
+	@Override
+	public User login(String username, String password) {
+		// TODO Auto-generated method stub
+		return null;
 	}
-	
 
+    // ❌ LOGIN REMOVED (use AuthService instead)
+}
