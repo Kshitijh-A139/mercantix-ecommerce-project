@@ -31,7 +31,7 @@ public class AuthenticationFilter implements Filter {
     private final AuthServiceContract authService;
     private final UserRepository userRepository;
 
-    private static final String ALLOWED_ORIGIN = "http://localhost:5174";
+    private static final String ALLOWED_ORIGIN = "http://localhost:5173";
 
     private static final String[] UNAUTHENTICATED_PATHS = {
         "/api/users/register",
@@ -103,11 +103,6 @@ public class AuthenticationFilter implements Filter {
             return;
         }
 
-        if (requestURI.startsWith("/api/") && role != Role.CUSTOMER) {
-            sendErrorResponse(httpResponse, HttpServletResponse.SC_FORBIDDEN, "Forbidden: Customer access required");
-            return;
-        }
-
         // Attach user details to request
         httpRequest.setAttribute("authenticatedUser", authenticatedUser);
         chain.doFilter(request, response);
@@ -127,13 +122,9 @@ public class AuthenticationFilter implements Filter {
     }
 
     private String getAuthTokenFromCookies(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            return Arrays.stream(cookies)
-                    .filter(cookie -> "authToken".equals(cookie.getName()))
-                    .map(Cookie::getValue)
-                    .findFirst()
-                    .orElse(null);
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
         }
         return null;
     }

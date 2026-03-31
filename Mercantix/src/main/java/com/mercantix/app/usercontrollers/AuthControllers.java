@@ -53,6 +53,8 @@ public class AuthControllers {
             responseBody.put("message", "Login successful");
             responseBody.put("role", user.getRole().name());
             responseBody.put("username", user.getUsername());
+            responseBody.put("token", token);
+            responseBody.put("user", Map.of("name", user.getUsername(), "role", user.getRole().name()));
 
             return ResponseEntity.ok(responseBody);
 

@@ -1,0 +1,134 @@
+.page { background: var(--color-bg); min-height: 100vh; }
+
+.inner { padding: 32px 24px 64px; }
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 32px;
+}
+.breadcrumb button {
+  background: none; border: none; cursor: pointer;
+  color: var(--color-text-secondary); font-size: 13px;
+  transition: color 0.2s; font-family: var(--font-body);
+}
+.breadcrumb button:hover { color: var(--brand-primary); }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+/* ── Image ── */
+.imagePanel {}
+.mainImageWrap {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--brand-gradient-soft);
+  aspect-ratio: 1;
+  box-shadow: var(--shadow-lg);
+}
+.mainImage { width: 100%; height: 100%; object-fit: cover; }
+.imagePlaceholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.discountBadge {
+  position: absolute; top: 16px; left: 16px;
+  background: var(--brand-gradient); color: #fff;
+  font-size: 13px; font-weight: 700;
+  padding: 5px 12px; border-radius: var(--radius-full);
+}
+
+/* ── Info ── */
+.infoPanel { display: flex; flex-direction: column; gap: 16px; }
+
+.brand {
+  font-size: 12px; font-weight: 700; color: var(--brand-primary);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 800;
+  color: var(--color-text); line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.ratingRow { display: flex; align-items: center; gap: 8px; }
+.stars { color: var(--color-warning); font-size: 18px; letter-spacing: 2px; }
+.ratingVal { font-size: 15px; font-weight: 700; color: var(--color-text); }
+.ratingCount { font-size: 13px; color: var(--color-text-muted); }
+
+.priceRow { display: flex; align-items: baseline; gap: 12px; }
+.price {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 800; color: var(--color-text);
+}
+.originalPrice {
+  font-size: 18px; color: var(--color-text-muted); text-decoration: line-through;
+}
+
+.description {
+  font-size: 15px; color: var(--color-text-secondary);
+  line-height: 1.7;
+  padding: 16px; background: var(--color-surface-2);
+  border-radius: var(--radius-md); border: 1px solid var(--color-border);
+}
+
+/* ── Actions ── */
+.actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.qtyControl {
+  display: flex; align-items: center;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full); overflow: hidden;
+}
+.qtyBtn {
+  width: 40px; height: 42px;
+  font-size: 18px; font-weight: 600;
+  background: none; border: none; cursor: pointer;
+  color: var(--color-text); transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.qtyBtn:hover:not(:disabled) { background: var(--color-surface-2); }
+.qtyBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.qty {
+  min-width: 44px; text-align: center;
+  font-size: 15px; font-weight: 700;
+}
+
+/* ── Tags ── */
+.tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.tag {
+  font-size: 12px; font-weight: 600; color: var(--brand-primary);
+  background: #eef2ff; border: 1px solid #c7d2fe;
+  padding: 4px 12px; border-radius: var(--radius-full);
+}
+
+/* ── Meta ── */
+.meta { display: flex; flex-direction: column; gap: 6px; }
+.metaRow { display: flex; gap: 8px; font-size: 13px; }
+.metaKey { color: var(--color-text-muted); min-width: 80px; }
+.metaVal { color: var(--color-text); font-weight: 600; }
+
+/* ── Skeleton ── */
+.skeleton { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; padding: 40px 24px; }
+.skImg { aspect-ratio: 1; border-radius: var(--radius-xl); }
+.skBody { display: flex; flex-direction: column; gap: 16px; padding-top: 24px; }
+.skLine { height: 16px; border-radius: 8px; }
+
+/* ── Error ── */
+.errorState { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 80px 0; }
+.errorState p { font-size: 18px; color: var(--color-text-secondary); }
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; gap: 28px; }
+  .skeleton { grid-template-columns: 1fr; }
+}

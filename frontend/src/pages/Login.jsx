@@ -1,83 +1,54 @@
-import React, { useState } from "react";
-import LoginForm from "../components/ui/LoginForm";
-import "../App.css";
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import LoginForm from '../components/LoginForm/LoginForm';
+import styles from './AuthPage.module.css';
 
 const Login = () => {
-  return (
-    <div className="auth-container">
-      <div className="auth-left">
-        <h1>Login</h1>
-        <p>Welcome Back! Log in to your account</p>
-      </div>
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const justRegistered = location.state?.registered;
 
-      <div className="auth-right">
-        <LoginForm />
+  useEffect(() => {
+    if (user) navigate('/', { replace: true });
+  }, [user, navigate]);
+
+  return (
+    <div className={`page-wrapper ${styles.page}`}>
+      <div className={styles.layout}>
+        {/* Left panel */}
+        <div className={styles.panel}>
+          <div className={styles.panelInner}>
+            <div className={styles.panelBlob} />
+            <div className={styles.panelContent}>
+              <div className={styles.lockIcon}></div>
+              <h2 className={styles.panelTitle}>Welcome to<br />Mercantix.</h2>
+              <p className={styles.panelSub}>
+                A Simple E-commerce Platform for Everyone. <br />
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right form */}
+        <div className={styles.formSide}>
+          <div className={styles.formCard}>
+            <h1 className={styles.formTitle}>Login</h1>
+            <p className={styles.formSub}>Please fill in your details to sign in.</p>
+
+            {justRegistered && (
+              <div className={styles.successBanner}>
+                ✓ Account created! Please log in.
+              </div>
+            )}
+
+            <LoginForm />
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default Login;
-
-
-
-
-
-
-
-
-
-// import { useState } from "react";
-// import { loginUser } from "../services/authService";
-// import { useNavigate } from "react-router-dom";
-
-// export default function Login() {
-//   const [form, setForm] = useState({ email: "", password: "" });
-//   const navigate = useNavigate();
-
-//   const handleChange = (e) => {
-//     setForm({ ...form, [e.target.name]: e.target.value });
-//   };
-
-//   const handleLogin = async () => {
-//     try {
-//       await loginUser(form);
-//       navigate("/home");
-//     } catch (err) {
-//       console.error(err);
-//       alert("Login failed");
-//     }
-//   };
-
-//   return (
-//     <div className="login-container">
-//       <div className="left">
-//         <h1>Simplify management with our dashboard</h1>
-//         <p>Manage your e-commerce easily</p>
-//       </div>
-
-//       <div className="right">
-//         <h2>Welcome to Mercantix</h2>
-
-//         <input
-//           name="email"
-//           placeholder="Email"
-//           onChange={handleChange}
-//         />
-
-//         <input
-//           name="password"
-//           type="password"
-//           placeholder="Password"
-//           onChange={handleChange}
-//         />
-
-//         <button onClick={handleLogin}>Login</button>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-

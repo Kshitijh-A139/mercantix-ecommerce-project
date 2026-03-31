@@ -1,59 +1,83 @@
-import React from "react";
-import Navbar from "../components/ui/Navbar";
+import { useNavigate } from 'react-router-dom';
+import CategoryNav from '../components/CategoryNav/CategoryNav';
+import ProductList from '../components/ProductList/ProductList';
+import Button from '../components/Button/Button';
+import { useProducts } from '../hooks/useProducts';
+import styles from './Home.module.css';
 
-const Home = () => {
+const Hero = () => {
+  const navigate = useNavigate();
   return (
-    <>
-      <Navbar />
-      <div className="home-container">
-        <div className="hero">
-          <h1>Powerful E-Commerce Dashboard</h1>
-          <p>Manage your store, track sales, grow business</p>
-          <button className="primary-btn">Explore Products</button>
+    <section className={styles.hero}>
+      <div className={styles.heroContent}>
+        <span className={styles.heroBadge}>✦ New arrivals every week</span>
+        <h1 className={styles.heroHeadline}>
+          Experience<br />
+          <span className={styles.heroGradient}>Effortless</span><br />
+          Shopping.
+        </h1>
+        <p className={styles.heroSub}>
+          Simplify your e-commerce management with our<br />
+          user-friendly dashboard and smart product discovery.
+        </p>
+        <div className={styles.heroCtas}>
+          <Button variant="primary" size="lg" onClick={() => navigate('/products')}>
+            Get Started
+          </Button>
+          <Button variant="secondary" size="lg" onClick={() => navigate('/register')}>
+            Create Account
+          </Button>
         </div>
-
-        <div className="features">
-          <div className="card">📊 Real-time Analytics</div>
-          <div className="card">📦 Inventory Management</div>
-          <div className="card">👥 Customer Insights</div>
+        <div className={styles.heroStats}>
+          {[['10K+', 'Products'], ['50K+', 'Customers'], ['4.9★', 'Rating']].map(([n, l]) => (
+            <div key={l} className={styles.stat}>
+              <span className={styles.statNum}>{n}</span>
+              <span className={styles.statLabel}>{l}</span>
+            </div>
+          ))}
         </div>
       </div>
-    </>
+      <div className={styles.heroVisual}>
+        <div className={styles.heroCard}>
+          <div className={styles.heroCardInner}>
+            <div className={styles.heroBlob} />
+            <div className={styles.heroIconGrid}>
+              {['💻', '👗', '🏠', '⚽', '✨', '📚', '🎮', '🧺', '📱'].map((icon, i) => (
+                <div key={i} className={styles.heroIconItem} style={{ animationDelay: `${i * 0.1}s` }}>
+                  {icon}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Home = () => {
+  const { products, loading, error } = useProducts({ limit: 8 });
+
+  return (
+    <div className={`page-wrapper ${styles.page}`}>
+      <div className="container">
+        <Hero />
+        <section>
+          <h2 className={styles.sectionTitle}>Shop by Category</h2>
+          <CategoryNav />
+        </section>
+        <section className={styles.featured}>
+          <div className={styles.featuredHeader}>
+            <h2 className={styles.sectionTitle}>Featured Products</h2>
+            <Button variant="secondary" size="sm" onClick={() => window.location.href = '/products'}>
+              View All →
+            </Button>
+          </div>
+          <ProductList products={products} loading={loading} error={error} />
+        </section>
+      </div>
+    </div>
   );
 };
 
 export default Home;
-
-
-
-
-
-
-
-
-
-// Home.jsx
-// import { useEffect, useState } from "react";
-// import Navbar from "../components/ui/Navbar";
-// import CategoryNavigation from "../components/ui/CategoryNavigation";
-// import ProductList from "../components/ui/ProductList";
-// import { getProducts } from "../services/productService";
-
-// export default function Home() {
-//   const [products, setProducts] = useState([]);
-
-//   useEffect(() => {
-//     (async () => {
-//       const res = await getProducts();
-//       setProducts(res.data);
-//     })();
-//   }, []);
-
-//   return (
-//     <div className="bg-gray-100 min-h-screen">
-//       <Navbar />
-//       <CategoryNavigation />
-//       <ProductList products={products} />
-//     </div>
-//   );
-// }

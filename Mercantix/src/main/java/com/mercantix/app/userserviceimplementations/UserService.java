@@ -49,11 +49,5 @@ public class UserService implements UserServiceContract {
         }
     }
 
-	@Override
-	public User login(String username, String password) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-    // ❌ LOGIN REMOVED (use AuthService instead)
+    // Login is handled by AuthService, not UserService
 }
