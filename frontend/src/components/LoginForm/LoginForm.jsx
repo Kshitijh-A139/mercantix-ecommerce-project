@@ -9,7 +9,7 @@ import styles from './LoginForm.module.css';
 const LoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,12 +24,18 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validateLoginForm(form);
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    console.log("Submitting login", form);
+    if (Object.keys(errs).length) { setErrors(errs); return;
+      
+  }
 
     setLoading(true);
     try {
-      await login(form);
-      navigate('/');
+      await login({
+        username: form.username,   // map username → email
+        password: form.password
+      });
+      navigate('/user');
     } catch (err) {
       setApiError(err.response?.data?.message || 'Invalid email or password');
     } finally {
@@ -40,14 +46,14 @@ const LoginForm = () => {
   return (
     <form className={styles.form} onSubmit={handleSubmit} noValidate>
       <InputField
-        label="Email address"
-        name="email"
-        type="email"
-        placeholder="you@example.com"
-        value={form.email}
+        label="Username"
+        name="username"
+        type="text"
+        placeholder="Enter your username"
+        value={form.username}
         onChange={handleChange}
-        error={errors.email}
-        autoComplete="email"
+        error={errors.username}
+        autoComplete="username"
         required
       />
       <InputField

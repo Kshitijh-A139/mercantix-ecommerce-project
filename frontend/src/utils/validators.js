@@ -6,10 +6,9 @@ export const validatePassword = (password) => ({
   message: 'Password must be at least 8 characters',
 });
 
-export const validateLoginForm = ({ email, password }) => {
+export const validateLoginForm = ({ username, password }) => {
   const errors = {};
-  if (!email) errors.email = 'Email is required';
-  else if (!validateEmail(email)) errors.email = 'Enter a valid email';
+  if (!username || !username.trim()) errors.username = 'Username is required';
   if (!password) errors.password = 'Password is required';
   return errors;
 };

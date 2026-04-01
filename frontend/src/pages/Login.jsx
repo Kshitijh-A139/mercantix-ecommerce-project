@@ -11,7 +11,7 @@ const Login = () => {
   const justRegistered = location.state?.registered;
 
   useEffect(() => {
-    if (user) navigate('/', { replace: true });
+    if (user) navigate('/user', { replace: true });
   }, [user, navigate]);
 
   return (

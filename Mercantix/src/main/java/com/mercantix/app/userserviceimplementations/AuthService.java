@@ -54,6 +54,15 @@ public class AuthService implements AuthServiceContract {
     @Override
     public User authenticate(String username, String password) {
 
+        // 🚨 HARD VALIDATION (THIS WAS MISSING)
+        if (username == null || username.trim().isEmpty()) {
+            throw new RuntimeException("Username is required");
+        }
+
+        if (password == null || password.trim().isEmpty()) {
+            throw new RuntimeException("Password is required");
+        }
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
@@ -63,7 +72,7 @@ public class AuthService implements AuthServiceContract {
 
         return user;
     }
-
+    
     @Override
     public String generateToken(User user) {
 
