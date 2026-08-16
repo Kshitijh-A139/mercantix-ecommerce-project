@@ -1,59 +1,99 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { loginUser, registerUser, logoutUser } from '../services/api';
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
+import { authService } from "../services/authService";
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+export function AuthProvider({ children }) {
+  // user: { username, email, role } | null
+  const [user, setUser]       = useState(() => authService.cachedUser());
+  const [loading, setLoading] = useState(authService.hasToken());   // true while we re-verify token on boot
+  const [error, setError]     = useState(null);
 
+  // ── Boot: if we have a token in storage, re-verify against /api/auth/me ──
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (stored && token) {
+    if (!authService.hasToken()) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
       try {
-        setUser(JSON.parse(stored));
+        const me = await authService.me();
+        if (!cancelled) setUser(me);
       } catch {
-        localStorage.clear();
+        // 401 interceptor already clears storage
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    }
-    setLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  const login = useCallback(async (credentials) => {
-    const { data } = await loginUser(credentials);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setUser(data.user);
-    return data;
-  }, []);
-
-  const register = useCallback(async (userData) => {
-    const { data } = await registerUser(userData);
-    return data;
-  }, []);
-
-  const logout = useCallback(async () => {
+  // ── login(credentials) ────────────────────────────────────────
+  const login = useCallback(async ({ username, password }) => {
+    setError(null);
+    setLoading(true);
     try {
-      await logoutUser();
-    } catch {
-      // ignore
+      const data = await authService.login({ username, password });
+      const u = { username: data.user.username, email: data.user.email, role: data.user.role };
+      setUser(u);
+      toast.success(`Welcome back, ${u.username}.`);
+      return { ok: true, role: u.role };
+    } catch (e) {
+      const msg = e.message || "Sign-in failed.";
+      setError(msg);
+      toast.error(msg);
+      return { ok: false, error: msg };
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setUser(null);
+      setLoading(false);
     }
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  // ── register({ username, email, password }) ───────────────────
+  const register = useCallback(async ({ username, email, password }) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const data = await authService.register({ username, email, password });
+      const u = { username: data.user.username, email: data.user.email, role: data.user.role };
+      setUser(u);
+      toast.success("Account created", { description: "Welcome to Mercantix." });
+      return { ok: true, role: u.role };
+    } catch (e) {
+      const msg = e.message || "Registration failed.";
+      setError(msg);
+      toast.error(msg);
+      return { ok: false, error: msg };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ── logout() ──────────────────────────────────────────────────
+  const logout = useCallback(async () => {
+    await authService.logout();
+    setUser(null);
+    toast("Signed out", { description: "See you soon." });
+  }, []);
+
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    isAdmin: user?.role === "ADMIN",
+    loading,
+    error,
+    login,
+    register,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
 };

@@ -1,100 +1,159 @@
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
-import CartItem from '../components/CartItem/CartItem';
-import Button from '../components/Button/Button';
-import { formatPrice } from '../utils/formatters';
-import styles from './Cart.module.css';
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, Minus, Trash2, ShoppingBag, ArrowRight, Lock } from "lucide-react";
+import { toast } from "sonner";
+import Button from "../components/ui/Button";
+import ImageWithFallback from "../components/ui/ImageWithFallback";
+import { useCart } from "../context/CartContext";
 
-const SHIPPING_THRESHOLD = 999;
-
-const Cart = () => {
-  const { items, total, clearCart } = useCart();
+export default function Cart() {
+  const { items, totals, updateQty, removeFromCart } = useCart();
   const navigate = useNavigate();
-  const shippingFee = total >= SHIPPING_THRESHOLD ? 0 : 79;
-  const grandTotal = total + shippingFee;
 
-  if (!items.length) {
+  if (items.length === 0) {
     return (
-      <div className={`page-wrapper ${styles.page}`}>
-        <div className={`container ${styles.emptyState}`}>
-          <div className={styles.emptyIcon}>🛒</div>
-          <h2 className={styles.emptyTitle}>Your cart is empty</h2>
-          <p className={styles.emptySub}>Looks like you haven't added anything yet.</p>
-          <Button variant="primary" size="lg" onClick={() => navigate('/products')}>
-            Start Shopping
-          </Button>
+      <div className="container-luxe py-20 md:py-28 flex flex-col items-center text-center gap-5">
+        <div className="h-20 w-20 grid place-items-center rounded-full bg-[--color-cream] text-[--color-mist]">
+          <ShoppingBag size={28} />
         </div>
+        <div>
+          <h1 className="font-display text-4xl text-[--color-ink]">Your bag is empty</h1>
+          <p className="text-sm text-[--color-mist] mt-2">
+            Discover our latest arrivals and considered essentials.
+          </p>
+        </div>
+        <Button as={Link} to="/products" variant="primary" size="lg">
+          Continue shopping
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className={`page-wrapper ${styles.page}`}>
-      <div className={`container ${styles.inner}`}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Shopping Cart</h1>
-          <button className={styles.clearBtn} onClick={clearCart}>Clear all</button>
+    <div className="container-luxe py-8 md:py-12">
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <span className="eyebrow">Shopping Bag</span>
+          <h1 className="font-display text-4xl md:text-5xl text-[--color-ink] mt-2">
+            Your Bag
+          </h1>
         </div>
+        <p className="text-sm text-[--color-mist]">{totals.count} {totals.count === 1 ? "item" : "items"}</p>
+      </div>
 
-        <div className={styles.layout}>
-          {/* Items list */}
-          <div className={styles.itemsList}>
-            {items.map((item) => (
-              <CartItem key={item.id} item={item} />
-            ))}
+      <div className="grid lg:grid-cols-[1.5fr_1fr] gap-10">
+        {/* Items */}
+        <ul className="flex flex-col">
+          {items.map((it, idx) => (
+            <li
+              key={it.key}
+              className={`grid grid-cols-[100px_1fr_auto] md:grid-cols-[120px_1fr_auto] gap-5 py-6 ${
+                idx > 0 ? "border-t border-[--color-sand]/70" : ""
+              }`}
+            >
+              <Link to={`/products/${it.id}`} className="block">
+                <ImageWithFallback
+                  src={it.image}
+                  alt={it.name}
+                  wrapperClassName="aspect-[3/4] bg-[--color-cream] rounded-sm"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              </Link>
+
+              <div className="flex flex-col">
+                <span className="text-[10px] tracking-[0.2em] uppercase text-[--color-mist]">{it.brand}</span>
+                <Link to={`/products/${it.id}`} className="font-display text-lg text-[--color-ink] hover:text-[--color-bronze-700] leading-snug">
+                  {it.name}
+                </Link>
+                {it.size && (
+                  <p className="text-xs text-[--color-mist] mt-1">Size: <span className="text-[--color-ink-soft]">{it.size}</span></p>
+                )}
+
+                <div className="mt-auto pt-3 flex items-center gap-4">
+                  <div className="inline-flex items-center border border-[--color-sand]">
+                    <button
+                      onClick={() => updateQty(it.key, it.qty - 1)}
+                      className="h-9 w-9 grid place-items-center hover:bg-[--color-cream]"
+                      aria-label="Decrease"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <span className="w-8 text-center text-sm">{it.qty}</span>
+                    <button
+                      onClick={() => updateQty(it.key, it.qty + 1)}
+                      className="h-9 w-9 grid place-items-center hover:bg-[--color-cream]"
+                      aria-label="Increase"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      removeFromCart(it.key);
+                      toast("Removed from bag", { description: it.name });
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs text-[--color-mist] hover:text-[--color-danger]"
+                  >
+                    <Trash2 size={13} /> Remove
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <p className="font-display text-lg text-[--color-ink]">${it.price * it.qty}</p>
+                {it.qty > 1 && (
+                  <p className="text-[11px] text-[--color-mist] mt-1">${it.price} each</p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Summary */}
+        <aside className="bg-[--color-cream] rounded-sm p-6 md:p-8 h-fit lg:sticky lg:top-[88px]">
+          <h2 className="font-display text-2xl text-[--color-ink]">Order Summary</h2>
+          <ul className="mt-5 flex flex-col gap-3 text-sm">
+            <Row label="Subtotal" value={`$${totals.subtotal.toFixed(2)}`} />
+            <Row
+              label="Shipping"
+              value={totals.shipping === 0 ? "Complimentary" : `$${totals.shipping.toFixed(2)}`}
+              valueClass={totals.shipping === 0 ? "text-[--color-bronze-700]" : ""}
+            />
+            <Row label="Estimated Tax" value={`$${totals.tax.toFixed(2)}`} />
+          </ul>
+          <div className="my-5 divider-rule" />
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-[--color-ink]">Total</span>
+            <span className="font-display text-2xl text-[--color-ink]">${totals.total.toFixed(2)}</span>
           </div>
 
-          {/* Order summary */}
-          <aside className={styles.summary}>
-            <h2 className={styles.summaryTitle}>Order Summary</h2>
+          {totals.subtotal < 200 && (
+            <p className="text-[11px] text-[--color-mist] mt-3">
+              Add ${(200 - totals.subtotal).toFixed(2)} more for complimentary shipping.
+            </p>
+          )}
 
-            <div className={styles.summaryRows}>
-              <div className={styles.summaryRow}>
-                <span>Subtotal</span>
-                <span>{formatPrice(total)}</span>
-              </div>
-              <div className={styles.summaryRow}>
-                <span>Shipping</span>
-                <span className={shippingFee === 0 ? styles.freeShipping : ''}>
-                  {shippingFee === 0 ? 'FREE' : formatPrice(shippingFee)}
-                </span>
-              </div>
-              {shippingFee > 0 && (
-                <p className={styles.freeShippingHint}>
-                  Add {formatPrice(SHIPPING_THRESHOLD - total)} more for free shipping!
-                </p>
-              )}
-            </div>
+          <Button onClick={() => navigate("/checkout")} variant="primary" size="lg" className="w-full mt-6">
+            Checkout <ArrowRight size={16} />
+          </Button>
 
-            <div className={styles.divider} />
+          <p className="mt-4 flex items-center justify-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-[--color-mist]">
+            <Lock size={11} /> Secure SSL checkout
+          </p>
 
-            <div className={styles.totalRow}>
-              <span>Total</span>
-              <span>{formatPrice(grandTotal)}</span>
-            </div>
-
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              onClick={() => navigate('/checkout')}
-            >
-              Proceed to Checkout →
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="md"
-              fullWidth
-              onClick={() => navigate('/products')}
-            >
-              Continue Shopping
-            </Button>
-          </aside>
-        </div>
+          <Link to="/products" className="mt-5 block text-center text-xs text-[--color-ink] hover:text-[--color-bronze-700] underline underline-offset-4">
+            Continue shopping
+          </Link>
+        </aside>
       </div>
     </div>
   );
-};
+}
 
-export default Cart;
+function Row({ label, value, valueClass = "" }) {
+  return (
+    <li className="flex items-center justify-between">
+      <span className="text-[--color-mist]">{label}</span>
+      <span className={`text-[--color-ink] ${valueClass}`}>{value}</span>
+    </li>
+  );
+}

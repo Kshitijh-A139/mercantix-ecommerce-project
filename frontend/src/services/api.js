@@ -1,74 +1,48 @@
-import axios from 'axios';
+// =============================================================
+//  Mercantix — Axios HTTP client
+//  Central place for: base URL, JWT injection, error normalisation.
+// =============================================================
+import axios from "axios";
 
-const BASE_URL = 'http://localhost:9090/api';
+export const TOKEN_KEY = "mercantix.token";
 
 const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:9090",
+  timeout: 15_000,
+  headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT token to every request
+// ── Request: attach JWT (if present) ──────────────────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Global response error handler
+// ── Response: normalise errors + auto-logout on 401 ───────────
 api.interceptors.response.use(
-  (response) => response,
+  (res) => res,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/';
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem("mercantix.user");
+      // Only redirect outside the auth pages to avoid loops.
+      const p = window.location.pathname;
+      if (!p.startsWith("/login") && !p.startsWith("/register") && p !== "/") {
+        window.location.assign("/login");
+      }
     }
-    return Promise.reject(error);
+
+    // Always surface a consistent shape: { message, status, data }
+    return Promise.reject({
+      status:  error.response?.status ?? 0,
+      message: error.response?.data?.message
+            || error.response?.data?.error
+            || error.message
+            || "Network error",
+      data:    error.response?.data,
+    });
   }
 );
-
-// ── Auth ──────────────────────────────────────────
-export const loginUser = (data) =>
-  api.post('/auth/login', data);
-
-export const registerUser = (data) =>
-  api.post('/auth/register', data);
-
-export const logoutUser = () =>
-  api.post('/auth/logout');
-
-// ── Products ──────────────────────────────────────
-export const getProducts = (params = {}) =>
-  api.get('/products', { params });
-
-export const getProductById = (id) =>
-  api.get(`/products/${id}`);
-
-export const getCategories = () =>
-  api.get('/categories');
-
-// ── Cart ──────────────────────────────────────────
-export const getCart = () =>
-  api.get('/cart');
-
-export const addToCart = (product) =>
-  api.post('/cart/add', product);
-
-export const updateCartItem = (itemId, quantity) =>
-  api.put(`/cart/${itemId}`, { quantity });
-
-export const removeCartItem = (itemId) =>
-  api.delete(`/cart/${itemId}`);
-
-export const clearCart = () =>
-  api.delete('/cart/clear');
-
-// ── Orders ────────────────────────────────────────
-export const placeOrder = (orderData) =>
-  api.post('/orders', orderData);
-
-export const getOrders = () =>
-  api.get('/orders');
 
 export default api;

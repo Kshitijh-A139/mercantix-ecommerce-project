@@ -1,0 +1,8 @@
+frontend/
+.git/
+.gitignore
+target/
+*.md
+.env*
+.project
+.settings/

@@ -1,169 +1,262 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useProduct } from '../hooks/useProducts';
-import { useCart } from '../context/CartContext';
-import Button from '../components/Button/Button';
-import { formatPrice, renderStars } from '../utils/formatters';
-import styles from './ProductDetail.module.css';
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Heart, ShoppingBag, Truck, RotateCcw, ShieldCheck, ChevronLeft, Star, Plus, Minus } from "lucide-react";
+import { toast } from "sonner";
+import Button from "../components/ui/Button";
+import ImageWithFallback from "../components/ui/ImageWithFallback";
+import ProductCard from "../components/ProductCard";
+import { productService } from "../services/productService";
+import { useCart } from "../context/CartContext";
 
-const StarRating = ({ rating, count }) => {
-  const { full, half, empty } = renderStars(rating);
-  return (
-    <div className={styles.ratingRow}>
-      <span className={styles.stars}>
-        {'★'.repeat(full)}{half ? '½' : ''}{'☆'.repeat(empty)}
-      </span>
-      <span className={styles.ratingVal}>{Number(rating).toFixed(1)}</span>
-      <span className={styles.ratingCount}>({count || 0} reviews)</span>
-    </div>
-  );
-};
-
-const ProductDetail = () => {
+export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { product, loading, error } = useProduct(id);
-  const { addItem, items } = useCart();
+  const { addToCart } = useCart();
+
+  const [product, setProduct] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const [selectedSize, setSelectedSize] = useState(null);
   const [qty, setQty] = useState(1);
-  const [added, setAdded] = useState(false);
+  const [activeImg, setActiveImg] = useState(0);
 
-  const inCart = items.some((i) => i.id === product?.id);
+  useEffect(() => {
+    let active = true;
+    setSelectedSize(null);
+    setQty(1);
+    setActiveImg(0);
+    setLoading(true);
+    setNotFound(false);
 
-  const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) addItem(product);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+    productService
+      .getById(id)
+      .then((p) => {
+        if (!active) return;
+        setProduct(p);
+        // Load a few related items from the same category.
+        return productService
+          .list({ category: p.category, size: 8 })
+          .then((res) => {
+            if (active) setRelated(res.items.filter((r) => r.id !== p.id).slice(0, 4));
+          })
+          .catch(() => {});
+      })
+      .catch((e) => {
+        if (active) {
+          if (e.status === 404) setNotFound(true);
+          else setNotFound(true);
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
   if (loading) {
     return (
-      <div className={`page-wrapper ${styles.page}`}>
-        <div className={`container ${styles.skeleton}`}>
-          <div className={`${styles.skImg} skeleton`} />
-          <div className={styles.skBody}>
-            {[80, 50, 100, 60, 40].map((w, i) => (
-              <div key={i} className={`${styles.skLine} skeleton`} style={{ width: `${w}%` }} />
-            ))}
+      <div className="container-luxe py-8 md:py-12">
+        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16">
+          <div className="aspect-[4/5] bg-[--color-cream] rounded-sm animate-pulse" />
+          <div className="flex flex-col gap-4">
+            <div className="h-4 w-24 bg-[--color-cream] rounded animate-pulse" />
+            <div className="h-9 w-2/3 bg-[--color-cream] rounded animate-pulse" />
+            <div className="h-6 w-28 bg-[--color-cream] rounded animate-pulse" />
+            <div className="h-24 w-full bg-[--color-cream] rounded animate-pulse" />
+            <div className="h-12 w-full bg-[--color-cream] rounded animate-pulse" />
           </div>
         </div>
       </div>
     );
   }
 
-  if (error || !product) {
+  if (notFound || !product) {
     return (
-      <div className={`page-wrapper ${styles.page}`}>
-        <div className={`container ${styles.errorState}`}>
-          <p>Product not found.</p>
-          <Button variant="primary" onClick={() => navigate('/products')}>Browse Products</Button>
-        </div>
+      <div className="container-luxe py-32 text-center">
+        <h1 className="font-display text-4xl text-[--color-ink]">Product not found</h1>
+        <Link to="/products" className="mt-4 inline-block text-sm text-[--color-bronze-700] underline">
+          Back to all products
+        </Link>
       </div>
     );
   }
+
+  const gallery = product.gallery?.length ? product.gallery : [product.image];
+
+  const handleAdd = () => {
+    if (product.sizes?.length > 1 && !selectedSize) {
+      toast.error("Please select a size first.");
+      return;
+    }
+    addToCart(product, { qty, size: selectedSize || product.sizes?.[0] });
+    toast.success("Added to bag", { description: `${product.name} · $${product.price * qty}` });
+  };
+
+  const handleBuyNow = () => {
+    if (product.sizes?.length > 1 && !selectedSize) {
+      toast.error("Please select a size first.");
+      return;
+    }
+    addToCart(product, { qty, size: selectedSize || product.sizes?.[0] });
+    navigate("/checkout");
+  };
 
   return (
-    <div className={`page-wrapper ${styles.page}`}>
-      <div className={`container ${styles.inner}`}>
-        {/* Breadcrumb */}
-        <nav className={styles.breadcrumb}>
-          <button onClick={() => navigate('/')}>Home</button>
-          <span>/</span>
-          <button onClick={() => navigate('/products')}>Products</button>
-          <span>/</span>
-          <span>{product.name}</span>
-        </nav>
+    <div className="container-luxe py-8 md:py-12">
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1.5 text-xs tracking-[0.18em] uppercase text-[--color-mist] hover:text-[--color-ink] mb-6"
+      >
+        <ChevronLeft size={14} /> Back
+      </button>
 
-        <div className={styles.layout}>
-          {/* Image panel */}
-          <div className={styles.imagePanel}>
-            <div className={styles.mainImageWrap}>
-              {product.imageUrl ? (
-                <img src={product.imageUrl} alt={product.name} className={styles.mainImage} />
-              ) : (
-                <div className={styles.imagePlaceholder}>
-                  <span style={{ fontSize: 64 }}>🛍️</span>
-                </div>
-              )}
-              {product.discount > 0 && (
-                <span className={styles.discountBadge}>-{product.discount}%</span>
-              )}
+      <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16">
+        {/* Gallery */}
+        <div className="grid grid-cols-[64px_1fr] gap-3 sm:gap-4">
+          <div className="flex flex-col gap-2.5">
+            {gallery.map((g, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveImg(i)}
+                className={`relative aspect-square overflow-hidden rounded-sm border transition-colors ${
+                  activeImg === i ? "border-[--color-ink]" : "border-[--color-sand] hover:border-[--color-mist]"
+                }`}
+                aria-label={`Thumbnail ${i + 1}`}
+              >
+                <img src={g} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+          <ImageWithFallback
+            src={gallery[activeImg]}
+            alt={product.name}
+            wrapperClassName="aspect-[4/5] bg-[--color-cream] rounded-sm"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+
+        {/* Info */}
+        <div className="flex flex-col gap-5">
+          <div>
+            <span className="text-[11px] tracking-[0.2em] uppercase text-[--color-mist]">{product.brand}</span>
+            <h1 className="font-display text-3xl md:text-4xl text-[--color-ink] mt-1">{product.name}</h1>
+            <div className="flex items-center gap-3 mt-3">
+              <div className="flex items-center gap-1">
+                <Star size={14} className="fill-[--color-warning] stroke-[--color-warning]" />
+                <span className="text-sm text-[--color-ink]">{product.rating}</span>
+                <span className="text-xs text-[--color-mist]">({product.reviews} reviews)</span>
+              </div>
             </div>
           </div>
 
-          {/* Info panel */}
-          <div className={styles.infoPanel}>
-            <span className={styles.brand}>{product.brand}</span>
-            <h1 className={styles.name}>{product.name}</h1>
+          <div className="flex items-baseline gap-3">
+            <span className="font-display text-3xl text-[--color-ink]">${product.price}</span>
+            {product.originalPrice && (
+              <span className="text-base text-[--color-stone] line-through">${product.originalPrice}</span>
+            )}
+          </div>
 
-            <StarRating rating={product.rating || 0} count={product.reviewCount} />
+          <p className="text-sm text-[--color-ink-soft] leading-relaxed border-t border-[--color-sand]/70 pt-5">
+            {product.description}
+          </p>
 
-            <div className={styles.priceRow}>
-              <span className={styles.price}>{formatPrice(product.price)}</span>
-              {product.originalPrice > product.price && (
-                <span className={styles.originalPrice}>{formatPrice(product.originalPrice)}</span>
-              )}
-            </div>
-
-            <p className={styles.description}>
-              {product.description || 'No description available for this product.'}
-            </p>
-
-            {/* Quantity + Add to cart */}
-            <div className={styles.actions}>
-              <div className={styles.qtyControl}>
-                <button
-                  className={styles.qtyBtn}
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  disabled={qty <= 1}
-                >−</button>
-                <span className={styles.qty}>{qty}</span>
-                <button
-                  className={styles.qtyBtn}
-                  onClick={() => setQty((q) => q + 1)}
-                >+</button>
+          {product.sizes?.length > 1 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="eyebrow !text-[--color-mist]">Select Size</p>
+                <button className="text-[11px] tracking-[0.18em] uppercase text-[--color-mist] hover:text-[--color-ink]">
+                  Size Guide
+                </button>
               </div>
-
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleAddToCart}
-                className={styles.addBtn}
-              >
-                {added ? '✓ Added to Cart!' : inCart ? 'Add More' : 'Add to Cart'}
-              </Button>
-
-              <Button variant="secondary" size="lg" onClick={() => navigate('/cart')}>
-                View Cart
-              </Button>
-            </div>
-
-            {/* Tags */}
-            {product.tags?.length > 0 && (
-              <div className={styles.tags}>
-                {product.tags.map((tag) => (
-                  <span key={tag} className={styles.tag}>{tag}</span>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSelectedSize(s)}
+                    className={`min-w-[48px] h-11 px-3 text-sm border transition-colors ${
+                      selectedSize === s
+                        ? "border-[--color-ink] bg-[--color-ink] text-[--color-ivory]"
+                        : "border-[--color-sand] hover:border-[--color-ink]"
+                    }`}
+                  >
+                    {s}
+                  </button>
                 ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Meta */}
-            <div className={styles.meta}>
-              {[
-                ['Category', product.category],
-                ['Stock', product.stock > 0 ? `${product.stock} units` : 'Out of Stock'],
-                ['SKU', product.sku || `SKU-${product.id}`],
-              ].map(([k, v]) => v && (
-                <div key={k} className={styles.metaRow}>
-                  <span className={styles.metaKey}>{k}:</span>
-                  <span className={styles.metaVal}>{v}</span>
-                </div>
-              ))}
+          {/* Qty */}
+          <div className="flex items-center gap-4">
+            <p className="eyebrow !text-[--color-mist]">Qty</p>
+            <div className="inline-flex items-center border border-[--color-sand]">
+              <button
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className="h-10 w-10 grid place-items-center hover:bg-[--color-cream]"
+                aria-label="Decrease"
+              >
+                <Minus size={14} />
+              </button>
+              <span className="w-10 text-center text-sm">{qty}</span>
+              <button
+                onClick={() => setQty((q) => q + 1)}
+                className="h-10 w-10 grid place-items-center hover:bg-[--color-cream]"
+                aria-label="Increase"
+              >
+                <Plus size={14} />
+              </button>
             </div>
           </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-3">
+            <Button onClick={handleAdd} variant="primary" size="lg" className="flex-1">
+              <ShoppingBag size={16} /> Add to Bag
+            </Button>
+            <Button onClick={handleBuyNow} variant="bronze" size="lg" className="flex-1">
+              Buy Now
+            </Button>
+            <button
+              onClick={() => toast("Saved to wishlist")}
+              className="inline-flex h-[50px] w-[50px] items-center justify-center border border-[--color-ink] hover:bg-[--color-cream]"
+              aria-label="Save to wishlist"
+            >
+              <Heart size={18} />
+            </button>
+          </div>
+
+          {/* Trust */}
+          <ul className="border-t border-[--color-sand]/70 pt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <TrustRow icon={<Truck size={14} />} label="Free shipping over $200" />
+            <TrustRow icon={<RotateCcw size={14} />} label="30-day easy returns" />
+            <TrustRow icon={<ShieldCheck size={14} />} label="Secure checkout" />
+          </ul>
         </div>
       </div>
+
+      {/* Related */}
+      {related.length > 0 && (
+        <section className="mt-20">
+          <h2 className="font-display text-2xl md:text-3xl text-[--color-ink] mb-8">You may also like</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-10">
+            {related.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
-};
+}
 
-export default ProductDetail;
+function TrustRow({ icon, label }) {
+  return (
+    <li className="flex items-center gap-2 text-[--color-mist]">
+      <span className="text-[--color-bronze-700]">{icon}</span>
+      {label}
+    </li>
+  );
+}
