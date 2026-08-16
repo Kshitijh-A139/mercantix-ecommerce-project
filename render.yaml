@@ -17,11 +17,11 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: CORS_ALLOWED_ORIGINS
-        value: https://mercantix.onrender.com
+        value: https://mercantix-app.onrender.com
 
   # ── Frontend: React static site ────────────────────────────────────────────
   - type: web
-    name: mercantix
+    name: mercantix-app
     runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
